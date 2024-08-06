@@ -3,9 +3,9 @@ This repository contains all codes (written in Python) and (sample) dataset of t
 ***Where Are Public Electric Vehicle Charging Stations Located Globally? Insights from a Spatial Planning Perspective***.
 
 ## TODO List
-- [x] Codes for the global EVCS distribution analysis (**1st August**)
-- [ ] Codes for the raw EVCS data processing
-- [ ] Codes for the population coverage analysis
+- [x] Codes for the global EVCS distribution analysis
+- [x] Codes for the raw EVCS data processing
+- [x] Codes for the population coverage analysis
 - [ ] Codes for the POI analysis
 - [ ] Codes for the road network analysis
 - [ ] Codes for the housing price analysis
@@ -31,7 +31,7 @@ Unzip the dataset file (``data.zip``) to the same directory as the ``codes``.
 
 # Contact
 - Leave questions in [Issues on GitHub](https://github.com/XanderPENG/global-evcs/issues)
-- Get in touch with the Corresponding Author: [Chengxiang Zhuge](mailto:chengxiang.zhuge@polyu.edu.hk)
+- Get in touch with the Corresponding Author: [Dr. Chengxiang Zhuge](mailto:chengxiang.zhuge@polyu.edu.hk)
 or visit our research group website: [The TIP](https://thetipteam.editorx.io/website) for more information
 
 # License
