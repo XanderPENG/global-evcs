@@ -1,7 +1,7 @@
 """
 Author: Xander Peng
 Date: 2024/7/26
-Description: Run this script to  analyze the distributions of EVCS in these 3 study areas entirely,
+Description: Run this script to analyze the distributions of EVCS in these 3 study areas entirely,
 which can be modified according to the specific required analysis.
 """
 import codes.utils.configs.city_clusters_config as cluster_config

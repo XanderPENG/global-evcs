@@ -6,7 +6,7 @@ This repository contains all codes (written in Python) and (sample) dataset of t
 - [x] Codes for the global EVCS distribution analysis
 - [x] Codes for the raw EVCS data processing
 - [x] Codes for the population coverage analysis
-- [ ] Codes for the POI analysis
+- [x] Codes for the POI analysis
 - [ ] Codes for the road network analysis
 - [ ] Codes for the housing price analysis
 
