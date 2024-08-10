@@ -198,7 +198,7 @@ if __name__ == '__main__':
     plot_output_dir = r'../data/output/plots/poi//'
     ''' China '''
     # Load the poi stats data
-    poi_stats_dir = r'../data/output/poi//'
+    poi_stats_dir = r'../data/output/texts/poi//'
     cn_dataset = load_poi_stats(region='cn',
                                 poi_stats_dir=poi_stats_dir
                                 )

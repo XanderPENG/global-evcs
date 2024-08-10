@@ -7,7 +7,7 @@ This repository contains all codes (written in Python) and (sample) dataset of t
 - [x] Codes for the raw EVCS data processing
 - [x] Codes for the population coverage analysis
 - [x] Codes for the POI analysis
-- [ ] Codes for the road network analysis
+- [x] Codes for the road network analysis
 - [ ] Codes for the housing price analysis
 
 
@@ -24,6 +24,9 @@ It is highly recommended to install and use the following versions of python/pac
 - ``networkx``: 3.1
 - ``statsmodels``: 0.14.0
 - ``cartopy``: 0.23.0
+- ``arcpy``: It is highly recommended to install the ArcGIS Pro 2.8 version to run the **arcpy-related codes**. 
+ Even though the related-functions could also be implemented by other packages (e.g., geopandas), 
+ the arcpy package is more efficient and convenient for the spatial analysis and geometry operations.
 
 # Usage
 Clone/download the repository to your local disk.

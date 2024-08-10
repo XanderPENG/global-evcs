@@ -19,7 +19,7 @@ evcs_shp_dir = r'../data/input/evcs_shp//'
 buffer_root_dir = r'../data/interim/evcs_buffers//'
 china_prov_folder_list = os.listdir(pct.POI_ROOT_DIR + "china/POI_CityLevel//")
 classified_poi_dir = pct.POI_OUPUT_DIR + 'china//'
-result_root_dir = r'../data/output/poi//'
+result_root_dir = r'../data/output/texts/poi//'
 
 for buff_dist in buffer_dis_list:
     ''' Create or read the buffer shp '''
