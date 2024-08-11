@@ -110,15 +110,15 @@ def cal_poi(
 
 
     else:  # eu
-        country_fname = filter_folder(eu_country_dict.get(country_kw), poi_root_dir)
+        state_fname = filter_folder(eu_country_dict.get(country_kw), poi_root_dir)
         # if country_fname in ['france', 'germany', 'great-britain', 'italy', 'netherlands', 'poland', 'russia', 'spain']:
         #     state_fname = filter_folder(state_kw, poi_root_dir + '\\' + country_fname)
         #     target_dir = poi_root_dir + '\\' + country_fname + '\\' + state_fname
         # else:
-        target_dir = poi_root_dir + '\\' + country_fname
+        target_dir = poi_root_dir + '\\' + state_fname
 
     ''' Merge 3 types poi data for eu and usa '''
-    if region in ['usa', 'eu'] and country_fname not in ['france', 'germany', 'great-britain', 'italy', 'netherlands',
+    if region in ['usa', 'eu'] and state_fname not in ['france', 'germany', 'great-britain', 'italy', 'netherlands',
                                                          'poland', 'russia', 'spain']:
         poi_df = pd.DataFrame()
         for f in os.listdir(target_dir):

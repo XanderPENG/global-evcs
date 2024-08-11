@@ -8,7 +8,10 @@ This repository contains all codes (written in Python) and (sample) dataset of t
 - [x] Codes for the population coverage analysis
 - [x] Codes for the POI analysis
 - [x] Codes for the road network analysis
-- [ ] Codes for the housing price analysis
+- [x] Codes for the housing price analysis
+- [ ] Test codes for *Plotting the figures*
+- [ ] Test codes for the *Analysis*
+- [ ] Optimize the proj structure, affiliated dataset, code dependencies, specific functions, etc.
 
 
 # Prerequisites
