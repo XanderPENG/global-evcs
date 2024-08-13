@@ -91,6 +91,9 @@ def plot_all_area_pop(cn_evcs,
                            dpi=300)
     height = 0.2
     y_ = np.arange(10)
+    cn_values = np.array(list(cn2.values()))
+    us_values = np.array(list(us2.values()))
+    eu_values = np.array(list(eu2.values()))
 
     ax.barh(y_ - height,
             list(cn2.values()),
@@ -115,6 +118,19 @@ def plot_all_area_pop(cn_evcs,
             alpha=0.8,
             label='EU'
             )
+
+     def add_poly_fit_line(x_values, y_positions, color, degree=3):
+        # 计算多项式拟合
+        f = np.polyfit(y_positions, x_values, degree)
+        p = np.poly1d(f)
+        _x = np.linspace(min(y_positions), max(y_positions), 100)
+        yvals = p(_x)
+        ax.plot(yvals, _x, color=color, linestyle='--', linewidth=2)
+    
+    # 调用函数添加多项式拟合线
+    add_poly_fit_line(cn_values+0.01, y_ - height, color='#CC6E0E', degree=3)
+    add_poly_fit_line(us_values+0.01, y_, color='#9497c5', degree=5)
+    add_poly_fit_line(eu_values, y_ + height, color='#95A54A', degree=5)
     ax.set_yticks(y_)
     ax.set_yticklabels(list(cn2.keys()),
                        fontdict={'family': 'Times New Roman',
