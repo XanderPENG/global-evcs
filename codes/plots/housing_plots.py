@@ -29,7 +29,7 @@ def load_dataset(region: str,
         for radius in radius_list:
             dataset[radius] = pd.read_csv(root_dir + "china//" + str(radius) + ".csv").dropna()
 
-    elif region.lower() == ['us', "usa"]:
+    elif region.lower() in ['us', "usa"]:
         for radius in radius_list:
             dataset[radius] = pd.read_csv(root_dir + "us//" + str(radius) + ".csv").dropna()
 
