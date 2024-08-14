@@ -54,7 +54,7 @@ def plot_housing_comparison(cn_dataset: dict,
     data = [x['norm'] for x in list(region_results.values())]
 
     plt.style.use('seaborn-whitegrid')
-    plt.figure(figsize=(9, 6), dpi=230)
+    plt.figure(figsize=(7, 9), dpi=230)
 
     ''' axes configuration '''
     ax = plt.subplot()
