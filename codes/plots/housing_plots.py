@@ -58,9 +58,6 @@ def plot_housing_comparison(cn_dataset: dict,
 
     ''' axes configuration '''
     ax = plt.subplot()
-    # ax.set_facecolor('#FFF7EF')
-    # ax.set_xlabel('Region', fontsize=23)
-    # ax.set_ylabel('Density', fontsize=23)
 
     box_img = ax.boxplot(data,
                          labels=list(region_results.keys()),
@@ -74,19 +71,18 @@ def plot_housing_comparison(cn_dataset: dict,
                          meanline=True,
                          showmeans=True,
                          meanprops={'color': 'orangered',
-                                    'linewidth': 1.5}
+                                    'linewidth': 1.5},
+                         vert=False  # 设置为 False 以转换为水平箱线图
                          )
 
     samples = [box_img.get('medians')[0], box_img.get('means')[0]]
 
     box_colors = ['#FFD3A7', '#FFAB57', '#CE7319',
                   '#A6ABCA', '#656EA3', '#3F4569',
-                  #  '#B7BD9D', '#939C6C', '#5C6242'
                   ]
 
     edge_colors = ['#FFA74F', '#CE7319', '#864300',
                    '#656EA3', '#3F4569', '#171927',
-                   #    '#939C6C', '#5C6242', '#4C5036'
                    ]
 
     ''' Adjust the color of each box '''
@@ -98,39 +94,22 @@ def plot_housing_comparison(cn_dataset: dict,
         whisker_lines = box_img['whiskers'][i * 2:(i + 1) * 2]
         cap_lines = box_img['caps'][i * 2:(i + 1) * 2]
 
-        # flier_lines = box_img['fliers'][i]
-
         for line in whisker_lines + cap_lines:
             line.set(color=edge_colors[i])
 
     # Set face color of 3 groups
-    ax.axvspan(0.5, 3.5, facecolor='#FFD3A7', alpha=0.2)
-    ax.axvspan(3.5, 6.5, facecolor='#656EA3', alpha=0.15)
-    # ax.axvspan(6.5, 9.5, facecolor='#939C6C', alpha=0.15)
+    ax.axhspan(0.5, 3.5, facecolor='#FFD3A7', alpha=0.2)  # 使用 axhspan 而不是 axvspan
+    ax.axhspan(3.5, 6.5, facecolor='#656EA3', alpha=0.15)
 
-    # ax.legend(handles=samples,
-    #             labels=['Median', 'Mean'],
-    #             prop={'family': 'Times New Roman', 'size':16},
-    #             loc='upper left',
-    #             # bbox_to_anchor=(1.12, 1.022),
-
-    #             facecolor='lightgrey',
-    #             # frameon=True
-    #             )
-    # ax.set_xticks([1.5, 4.5, 7.5])
-    # ax.set_xticklabels(['Group 1', 'Group 2', 'Group 3'])
-    # ax.set_xticks([1, 2, 3, 4, 5, 6, 7, 8, 9], minor=True)
-    # ax.set_xticklabels(['Data 1', 'Data 2', 'Data 3', 'Data 4', 'Data 5', 'Data 6', 'Data 7', 'Data 8', 'Data 9'], minor=True)
-    # ax.set_xticklabels(list(region_results.keys()), fontdict={'fontsize': 18})
-    plt.yticks(fontsize=14,
-               fontfamily='Times New Roman')
-    ax.set_xticklabels(['300', '800', '1000'] * 2,
+    plt.xticks(fontsize=14, fontfamily='Times New Roman')
+    ax.set_yticklabels(['300', '800', '1000'] * 2,  # 调整到 y 轴
                        fontdict={'family': 'Times New Roman', 'size': 14})
-    ax.tick_params(axis='both', labelsize=14, pad=8, )
+    ax.tick_params(axis='both', labelsize=14, pad=8)
     plt.tight_layout()
+
     if output_dir is not None:
         os.makedirs(output_dir, exist_ok=True)
-        ax.savefig(output_dir+'housing_comparison.png')
+        plt.savefig(output_dir + 'housing_comparison.png')
     plt.show()
 
 
