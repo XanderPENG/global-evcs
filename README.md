@@ -2,18 +2,6 @@
 This repository contains all codes (written in Python) and (sample) dataset of the paper - 
 ***Where Are Public Electric Vehicle Charging Stations Located Globally? Insights from a Spatial Planning Perspective***.
 
-## TODO List
-- [x] Codes for the global EVCS distribution analysis
-- [x] Codes for the raw EVCS data processing
-- [x] Codes for the population coverage analysis
-- [x] Codes for the POI analysis
-- [x] Codes for the road network analysis
-- [x] Codes for the housing price analysis
-- [ ] Test codes for *Plotting the figures*
-- [ ] Test codes for the *Analysis*
-- [ ] Optimize the proj structure, affiliated dataset, code dependencies, specific functions, etc.
-
-
 # Prerequisites
 It is highly recommended to install and use the following versions of python/packages to run the codes:
 - ``python``: 3.10.6
