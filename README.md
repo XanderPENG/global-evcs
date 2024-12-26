@@ -1,6 +1,8 @@
 # Overview
 This repository contains all codes (written in Python) and (sample) dataset of the paper - 
-***Where Are Public Electric Vehicle Charging Stations Located Globally? Insights from a Spatial Planning Perspective***.
+***Where Are Public Electric Vehicle Charging Stations Located Globally? Insights from a Spatial Planning Perspective***. 
+
+Note that the **full dataset** can be requested through our [Global EV Data Initiative](https://globalevdata.github.io/data.html).
 
 # Prerequisites
 It is highly recommended to install and use the following versions of python/packages to run the codes:
