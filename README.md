@@ -1,11 +1,11 @@
 # Overview
-This repository contains all codes (written in Python) and (sample) dataset of the paper - 
+This repository contains all codes and (sample) dataset of the paper - 
 ***Where Are Public Electric Vehicle Charging Stations Located Globally? Insights from a Spatial Planning Perspective***. 
 
 Note that the **full dataset** can be requested through our [Global EV Data Initiative](https://globalevdata.github.io/data.html).
 
 # Requirements and Installation
-The whole analysis-related codes (except for some data collection codes in the dir `./codes/housing_price/housing_price_US/...`) 
+The whole analysis-related codes (except for some data collection codes in the dir `./codes/data_collection/...`) 
 should run with a **Python** environment, regardless of operating systems theoretically. 
 We successfully execute all the codes in both Windows (Win10, Win11) machines and a macOS (Sequoia 15.2) machine.
 More detailed info is as below:
