@@ -1,4 +1,5 @@
 # About the Data
+In this version, the 2024 EVCS data is used. 
 
 Due to the exceptionally large size of the dataset (including both raw and interim data),
 we are only able to upload sample data for certain analyses (e.g., POI analysis). 
