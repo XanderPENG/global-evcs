@@ -114,6 +114,8 @@ def load_raw_evcs(region: str,
 
 
 def load_preprocessed_evcs(region: str,
+                           usecols=None,
+                           index_col=None,
                            ) -> pd.DataFrame:
     """
     Load the preprocessed EVCS data.
@@ -125,13 +127,15 @@ def load_preprocessed_evcs(region: str,
     assert region in ["china", "usa", "europe"], f'Invalid region name: {region}'
 
     file_name = ''
-    if region == "china":
-        file_name = 'cn_evcs_cleaned.csv'
-    elif region == "usa":
-        file_name = 'us_evcs_cleaned.csv'
-    elif region == "europe":
-        file_name = 'eu_evcs_cleaned.csv'
+    if region.lower() == "china":
+        file_name = 'clean_china.csv.gz'
+    elif region.lower() == "usa":
+        file_name = 'clean_usa.csv.gz'
+    elif region.lower() == "europe":
+        file_name = 'clean_europe.csv.gz'
 
-    evcs = pd.read_csv(global_input_path + "interim/evcs_dist/" + f"{region}/" + file_name)
+    evcs = pd.read_csv(r'../data/' + "interim/cleaned_evcs/" + file_name, index_col=index_col)
+    if usecols is not None:
+        evcs = evcs[usecols]
 
     return evcs

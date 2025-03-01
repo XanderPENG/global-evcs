@@ -37,9 +37,9 @@ def load_county(county_dir: str,
 def load_population(region: str):
 
     if region == 'china':
-        pop = pd.read_csv("../data/input/population/China/China.csv")
-
-
+        pop = pd.read_csv("../data/input/population/China/China.csv.gz")
+    else:
+        raise ValueError("Invalid region name.")
     return pop
 
 
@@ -81,7 +81,7 @@ def county2_pop2cs(county_filtered: gpd.GeoDataFrame,
         pop2cs_gdf.crs = "EPSG:4326"
 
     # Spatial join
-    county_pop2cs = gpd.sjoin(pop2cs_gdf, county_filtered, how='left', op='within')
+    county_pop2cs = gpd.sjoin(pop2cs_gdf, county_filtered, how='left', predicate='within')
     return county_pop2cs
 
 
@@ -106,8 +106,9 @@ def county2pop(county_gdf: gpd.GeoDataFrame, all_pop_gdf: gpd.GeoDataFrame,
         all_pop_gdf.crs = "EPSG:4326"
 
     # Spatial join
-    county_pop = gpd.sjoin(all_pop_gdf, county_gdf, how='left', op='within')
+    county_pop = gpd.sjoin(all_pop_gdf, county_gdf, how='left', predicate='within')
     county_pop.dropna(inplace=True)
+    county_pop.drop(columns=['geometry'], inplace=True)
     # Get max and min value of each county's population
     county_pop_maxmin = county_pop.groupby(group_field).agg(['max', 'min'])
 
@@ -162,7 +163,10 @@ def us_pop2cs(cs: pd.DataFrame, state: str,
         print(current_pop_file)
         raise NameError('Too many population files are found')
     else:
-        current_pop_file = current_pop_file[0]
+        try:
+            current_pop_file = current_pop_file[0]
+        except IndexError:
+            raise NameError('No population file of ' +state+ ' is found')
     current_pop_dir = pop_dir + '\\' + current_pop_file
     current_pop = pd.read_csv(current_pop_dir)
 
