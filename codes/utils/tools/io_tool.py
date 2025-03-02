@@ -7,6 +7,8 @@ Description: This module contains path/functions to read and write data.
 import pandas as pd
 import geopandas as gpd
 
+import codes.preprocessing.tools
+
 global_input_path = r"../data/input/"
 global_output_path = r"../data/output/"
 
@@ -139,3 +141,55 @@ def load_preprocessed_evcs(region: str,
         evcs = evcs[usecols]
 
     return evcs
+
+def load_processed_evcs_fusion_boundary(region: str,
+                                        evcs_usecols=None,
+                                        evcs_lat_col='wgs84_lat',
+                                        evcs_lon_col='wgs84_lng',
+                                        boundary_usecols=None,
+                                        boundary_level='state',
+                                        index_col=None,
+                                        ) -> pd.DataFrame:
+    assert region.lower() in ["china", "usa", "europe"], f'Invalid region name: {region}'
+    file_name = ''
+    if region.lower() == "china":
+        file_name = 'clean_china.csv.gz'
+        if boundary_level == 'state':
+            boundary = gpd.read_file(global_input_path + "boundary/" + f"{region}/" + '2021年国家矢量.shp')
+        elif boundary_level == 'city':
+            boundary = gpd.read_file(global_input_path + "boundary/" + f"{region}/" + '地级.shp')
+        else:
+            raise ValueError("Invalid boundary level.")
+
+    elif region.lower() == "usa":
+        file_name = 'clean_usa.csv.gz'
+        if boundary_level == 'state':
+            boundary = gpd.read_file(global_input_path + "boundary/" + f"{region}/" + 'gadm41_USA_1.shp')
+        elif boundary_level == 'city':
+            boundary = gpd.read_file(global_input_path + "boundary/" + f"{region}/" + 'gadm41_USA_2.shp')
+        else:
+            raise ValueError("Invalid boundary level.")
+
+    elif region.lower() == "europe":
+        file_name = 'clean_europe.csv.gz'
+        if boundary_level == 'state':
+            boundary = codes.preprocessing.tools.load_europe_boundary('state')
+        elif boundary_level == 'city':
+            boundary = codes.preprocessing.tools.load_europe_boundary('city')
+        else:
+            raise ValueError("Invalid boundary level.")
+
+    evcs = pd.read_csv(r'../data/' + "interim/cleaned_evcs/" + file_name, index_col=index_col)
+    if evcs_usecols is not None:
+        evcs = evcs[evcs_usecols]
+        evcs_gdf = gpd.GeoDataFrame(evcs, geometry=gpd.points_from_xy(evcs[evcs_lon_col], evcs[evcs_lat_col]))
+        if evcs_gdf.crs is None:
+            evcs_gdf.crs = "EPSG:4326"
+
+    if boundary_usecols is not None:
+        boundary = boundary[boundary_usecols+['geometry']]
+
+    evcs_with_boundary = gpd.sjoin(evcs_gdf, boundary, how='left', predicate='within').drop(columns=['geometry'])
+    return evcs_with_boundary
+
+

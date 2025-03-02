@@ -13,95 +13,95 @@ import codes.utils.tools.io_tool as io_tool
 import transbigdata as tbd
 
 
-# """ Calculate the population coverage of EVCS for China"""
-# china_evcs = io_tool.load_preprocessed_evcs('china')
-#
-# china_county = pop_tool.load_county("../data/input/boundary/china/地级.shp",
-#                                     usecols=['地名', '区划码', '地级', '省级', 'ENG_NAME', 'geometry'])
-#
-# china_pop = pop_tool.load_population('china')
-# china_pop_gdf = gpd.GeoDataFrame(china_pop,
-#                                  geometry=gpd.points_from_xy(china_pop['X'], china_pop['Y']))
-#
-# # Match population grid with EVCS
-# pop_cs, pop_cs_gdf = pop_tool.pop2cs_cn(china_evcs, china_pop_gdf,
-#                                         ['wgs84_lng', 'wgs84_lat'],
-#                                         ['X', 'Y'])
-# # Add county information to the pop_cs_gdf
-# county_pop_cs = pop_tool.county2_pop2cs(china_county, pop_cs_gdf)
-#
-# # Calculate the population stats of each county
-# county_pop = pop_tool.county2pop(china_county, china_pop_gdf, '区划码', 'Z')
-#
-# # Calculate the population coverage of EVCS
-# cs_pop_cov = pop_tool.cal_v(county_pop, county_pop_cs, '区划码',
-#                             'Z')
-# cs_pop_cov = cs_pop_cov[cs_pop_cov['V'].between(0, 1)]
-#
-# cs_pop_cov.to_csv("../data/output/texts/population/china_evcs_pop.csv.gz", compression='gzip')
-#
-#
-# """ Calculate the population coverage of EVCS for the US """
-# # Get the PopGrid sheets list and state name list
-# pop_state_name, us_pop_sheets = pop_tool.load_us_pop_sheets()
-#
-# # Load the US EVCS
-# us_evcs = io_tool.load_preprocessed_evcs('usa',
-#                                          usecols=['Station Name', 'City', 'State', 'Latitude', 'Longitude'],
-#                                          index_col=0
-#                                           )
-# cs_states_set = set(us_evcs['State'].to_list())
-# diff_states = list(cs_states_set.difference(pop_state_name))
-#
-# us_evcs = us_evcs.loc[~us_evcs['State'].isin(diff_states)]
-# us_evcs.reset_index(inplace=True)
-# us_evcs.rename(columns={'index': 'origin_idx'}, inplace=True)
-#
-# # Start Match and get the pop2cs
-# us_pop2cs = pd.DataFrame()
-# for idx, s in enumerate(set(us_evcs['State'].to_list())):
-#     if idx == 0:
-#         current_pop2cs = pop_tool.us_pop2cs(us_evcs, s,
-#                                             pop_tool.us_pop_dir,
-#                                             us_pop_sheets)
-#         us_pop2cs = current_pop2cs
-#     else:
-#         current_pop2cs = pop_tool.us_pop2cs(us_evcs, s,
-#                                             pop_tool.us_pop_dir,
-#                                             us_pop_sheets)
-#         us_pop2cs = pd.concat([us_pop2cs, current_pop2cs])
-#
-# us_pop2cs = us_pop2cs[us_pop2cs['dist'] <= 585]
-# us_pop2cs_gdf = gpd.GeoDataFrame(us_pop2cs,
-#                                  geometry=gpd.points_from_xy(us_pop2cs['Longitude'], us_pop2cs['Latitude']))
-#
-# # Load county shapefile
-# us_county_gdf = pop_tool.load_county("../data/input/boundary/usa/gadm41_USA_2.shp")
-#
-# # Add county information to the pop_cs_gdf
-# us_county_pop_cs = pop_tool.county2_pop2cs(us_county_gdf, us_pop2cs_gdf)
-#
-# # Merge all the pop file
-# us_pop = pd.DataFrame()
-# for idx, s in enumerate(us_pop_sheets):
-#     if idx == 0:
-#         current_pop = pd.read_csv(pop_tool.us_pop_dir + '//' + s)
-#         us_pop = current_pop
-#     else:
-#         current_pop = pd.read_csv(pop_tool.us_pop_dir + '//' + s)
-#         us_pop = pd.concat([us_pop, current_pop])
-# us_pop_gdf = gpd.GeoDataFrame(us_pop,
-#                                 geometry=gpd.points_from_xy(us_pop['X'], us_pop['Y']))
-# # Add county information to the pop_cs_gdf
-# us_county_pop = pop_tool.county2pop(us_county_gdf, us_pop_gdf, 'GID_2', 'Z')
-#
-# # Calculate the population coverage of EVCS
-# us_cs_pop_cov = pop_tool.cal_v(us_county_pop, us_county_pop_cs, 'GID_2',
-#                                 'Z')
-# us_cs_pop_cov = us_cs_pop_cov[us_cs_pop_cov['V'].between(0, 1)]
-# us_cs_pop_cov = clean_tool.filter_county(us_cs_pop_cov,
-#                                          cols=['NAME_1', 'NAME_2'])
-# us_cs_pop_cov.to_csv("../data/output/texts/population/usa_evcs_pop.csv.gz")
+""" Calculate the population coverage of EVCS for China"""
+china_evcs = io_tool.load_preprocessed_evcs('china')
+
+china_county = pop_tool.load_county("../data/input/boundary/china/地级.shp",
+                                    usecols=['地名', '区划码', '地级', '省级', 'ENG_NAME', 'geometry'])
+
+china_pop = pop_tool.load_population('china')
+china_pop_gdf = gpd.GeoDataFrame(china_pop,
+                                 geometry=gpd.points_from_xy(china_pop['X'], china_pop['Y']))
+
+# Match population grid with EVCS
+pop_cs, pop_cs_gdf = pop_tool.pop2cs_cn(china_evcs, china_pop_gdf,
+                                        ['wgs84_lng', 'wgs84_lat'],
+                                        ['X', 'Y'])
+# Add county information to the pop_cs_gdf
+county_pop_cs = pop_tool.county2_pop2cs(china_county, pop_cs_gdf)
+
+# Calculate the population stats of each county
+county_pop = pop_tool.county2pop(china_county, china_pop_gdf, '区划码', 'Z')
+
+# Calculate the population coverage of EVCS
+cs_pop_cov = pop_tool.cal_v(county_pop, county_pop_cs, '区划码',
+                            'Z')
+cs_pop_cov = cs_pop_cov[cs_pop_cov['V'].between(0, 1)]
+
+cs_pop_cov.to_csv("../data/output/texts/population/china_evcs_pop.csv.gz", compression='gzip')
+
+
+""" Calculate the population coverage of EVCS for the US """
+# Get the PopGrid sheets list and state name list
+pop_state_name, us_pop_sheets = pop_tool.load_us_pop_sheets()
+
+# Load the US EVCS
+us_evcs = io_tool.load_preprocessed_evcs('usa',
+                                         usecols=['Station Name', 'City', 'State', 'Latitude', 'Longitude'],
+                                         index_col=0
+                                          )
+cs_states_set = set(us_evcs['State'].to_list())
+diff_states = list(cs_states_set.difference(pop_state_name))
+
+us_evcs = us_evcs.loc[~us_evcs['State'].isin(diff_states)]
+us_evcs.reset_index(inplace=True)
+us_evcs.rename(columns={'index': 'origin_idx'}, inplace=True)
+
+# Start Match and get the pop2cs
+us_pop2cs = pd.DataFrame()
+for idx, s in enumerate(set(us_evcs['State'].to_list())):
+    if idx == 0:
+        current_pop2cs = pop_tool.us_pop2cs(us_evcs, s,
+                                            pop_tool.us_pop_dir,
+                                            us_pop_sheets)
+        us_pop2cs = current_pop2cs
+    else:
+        current_pop2cs = pop_tool.us_pop2cs(us_evcs, s,
+                                            pop_tool.us_pop_dir,
+                                            us_pop_sheets)
+        us_pop2cs = pd.concat([us_pop2cs, current_pop2cs])
+
+us_pop2cs = us_pop2cs[us_pop2cs['dist'] <= 585]
+us_pop2cs_gdf = gpd.GeoDataFrame(us_pop2cs,
+                                 geometry=gpd.points_from_xy(us_pop2cs['Longitude'], us_pop2cs['Latitude']))
+
+# Load county shapefile
+us_county_gdf = pop_tool.load_county("../data/input/boundary/usa/gadm41_USA_2.shp")
+
+# Add county information to the pop_cs_gdf
+us_county_pop_cs = pop_tool.county2_pop2cs(us_county_gdf, us_pop2cs_gdf)
+
+# Merge all the pop file
+us_pop = pd.DataFrame()
+for idx, s in enumerate(us_pop_sheets):
+    if idx == 0:
+        current_pop = pd.read_csv(pop_tool.us_pop_dir + '//' + s)
+        us_pop = current_pop
+    else:
+        current_pop = pd.read_csv(pop_tool.us_pop_dir + '//' + s)
+        us_pop = pd.concat([us_pop, current_pop])
+us_pop_gdf = gpd.GeoDataFrame(us_pop,
+                                geometry=gpd.points_from_xy(us_pop['X'], us_pop['Y']))
+# Add county information to the pop_cs_gdf
+us_county_pop = pop_tool.county2pop(us_county_gdf, us_pop_gdf, 'GID_2', 'Z')
+
+# Calculate the population coverage of EVCS
+us_cs_pop_cov = pop_tool.cal_v(us_county_pop, us_county_pop_cs, 'GID_2',
+                                'Z')
+us_cs_pop_cov = us_cs_pop_cov[us_cs_pop_cov['V'].between(0, 1)]
+us_cs_pop_cov = clean_tool.filter_county(us_cs_pop_cov,
+                                         cols=['NAME_1', 'NAME_2'])
+us_cs_pop_cov.to_csv("../data/output/texts/population/usa_evcs_pop.csv.gz")
 
 """ Calculate the population coverage of EVCS for Europe """
 # Load the EVCS data

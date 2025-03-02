@@ -209,4 +209,27 @@ def sjoin_europe_evcs(europe_evcs: pd.DataFrame,
 
     return europe_evcs_boundary
 
+def sjoin_usa_evcs(us_evcs: pd.DataFrame,
+                   usa_boundary_path: str,
+                   ) -> gpd.GeoDataFrame:
+    """
+    Spatial join the USA EVCS with USA boundary data
+    :param us_evcs: DataFrame
+    :param usa_boundary: GeoDataFrame
+    :return: GeoDataFrame
+    """
+    us_evcs_gdf = gpd.GeoDataFrame(us_evcs,
+                                   geometry=gpd.points_from_xy(us_evcs['Longitude'], us_evcs['Latitude']))
+    us_evcs_gdf.crs = "EPSG:4326"
+
+    origin_cols = list(us_evcs_gdf.columns)
+
+    us_boundary = gpd.read_file(usa_boundary_path)
+    if us_boundary.crs is None:
+        us_boundary.crs = "EPSG:4326"
+
+    us_evcs_boundary = gpd.sjoin(us_evcs_gdf, us_boundary, how='left', predicate='within')
+    us_evcs_boundary = us_evcs_boundary[origin_cols + ['NAME_1', 'NAME_2', 'HASC_2']]
+
+    return us_evcs_boundary.drop(columns=['geometry'])
 
