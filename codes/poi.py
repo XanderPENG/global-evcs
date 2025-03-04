@@ -13,43 +13,43 @@ import pandas as pd
 import geopandas as gpd
 
 buffer_dis_list = [300, 800, 1000]
-''' China '''
-region_name = 'china'
-evcs_cn = load_preprocessed_evcs(region_name)
-evcs_shp_dir = r'../data/input/evcs_shp//china//'
 buffer_root_dir = r'../data/interim/evcs_buffers//'
-china_prov_folder_list = os.listdir(pct.POI_OUPUT_DIR + 'china//')
 classified_poi_dir = pct.POI_OUPUT_DIR + '//'
 result_root_dir = r'../data/output/texts/poi//'
-
-for buff_dist in buffer_dis_list:
-    ''' read the buffer shp '''
-    current_buffer = gpd.read_file(buffer_root_dir + 'china//' + str(buff_dist) + 'buffer.shp')
-    province_list: list = evcs_cn['province'].drop_duplicates().to_list()  # All provinces
-    poi2cs = pd.DataFrame()
-
-    ''' Calculate the poi mix '''
-    for p in evcs_cn['province'].drop_duplicates().to_list():
-        poi_cs_slice = poi_tool.cal_poi(region=region_name,
-                                        state_kw=p,
-                                        country_kw=None,
-
-                                        cs_buffer=current_buffer,
-                                        cs_kw_field='province',
-                                        cs_buffer_name='name',
-
-                                        poi_root_dir=classified_poi_dir+'china//',
-                                        poi_df_lon='wgs84_lon',
-                                        poi_df_lat='wgs84_lat',
-
-                                        join_gdf_idx='name_left',
-                                        eu_country_dict=None
-                                        )
-
-        poi2cs = pd.concat([poi2cs, poi_cs_slice])
-
-    ''' Output '''
-    poi2cs.to_csv(result_root_dir + region_name + '//' + str(buff_dist) + 'dist.csv.gz')
+''' China '''
+# region_name = 'china'
+# evcs_cn = load_preprocessed_evcs(region_name)
+# evcs_shp_dir = r'../data/input/evcs_shp//china//'
+# china_prov_folder_list = os.listdir(pct.POI_OUPUT_DIR + 'china//')
+#
+# for buff_dist in buffer_dis_list:
+#     ''' read the buffer shp '''
+#     current_buffer = gpd.read_file(buffer_root_dir + 'china//' + str(buff_dist) + 'buffer.shp')
+#     province_list: list = evcs_cn['province'].drop_duplicates().to_list()  # All provinces
+#     poi2cs = pd.DataFrame()
+#
+#     ''' Calculate the poi mix '''
+#     for p in evcs_cn['province'].drop_duplicates().to_list():
+#         poi_cs_slice = poi_tool.cal_poi(region=region_name,
+#                                         state_kw=p,
+#                                         country_kw=None,
+#
+#                                         cs_buffer=current_buffer,
+#                                         cs_kw_field='province',
+#                                         cs_buffer_name='name',
+#
+#                                         poi_root_dir=classified_poi_dir+'china//',
+#                                         poi_df_lon='wgs84_lon',
+#                                         poi_df_lat='wgs84_lat',
+#
+#                                         join_gdf_idx='name_left',
+#                                         eu_country_dict=None
+#                                         )
+#
+#         poi2cs = pd.concat([poi2cs, poi_cs_slice])
+#
+#     ''' Output '''
+#     poi2cs.to_csv(result_root_dir + region_name + '//' + str(buff_dist) + 'dist.csv.gz')
 
 ''' USA '''
 evcs_us = load_preprocessed_evcs('usa',
@@ -105,51 +105,51 @@ for buff_dist in buffer_dis_list:
     poi2cs.to_csv(result_root_dir + region_name + '//' + str(buff_dist) + 'dist.csv.gz')
 
 """ EU """
-evcs_eu = load_preprocessed_evcs('europe',
-                                 usecols=['location_unique_id', 'location_country', 'Latitude', 'Longitude',
-                                          'COUNTRY'])
-# evcs_eu = pd.read_csv(r'../data/interim/cleaned_evcs/europe_evcs4plot.csv.csv',
-#                       usecols=['value', 'location_unique_id',
-#                                'location_country', 'location_lng', 'location_lat',
-#                                'COUNTRY', 'NAME_1', 'NAME_2']
-#                       )
-eu_country_dict = poi_tool.country_full_name(eu_cs_df=evcs_eu)
-eu_country_dict.update({'GB': 'great-britain',
-                        'NL': 'Netherlands',
-                        'CZ': 'czech-republic',
-                        'MK': 'Macedonia',
-                        'MD': 'Moldova',
-                        'EL': 'Greece'
-                        })
-
-region_name = 'europe'
-
-for buff_dist in buffer_dis_list:
-    ''' Load the buffer shp '''
-    current_buffer = gpd.read_file(buffer_root_dir + 'europe//' + str(buff_dist) + 'buffer.shp')
-    country_list: list = evcs_eu['location_country'].drop_duplicates().to_list()  # All countries abr
-    poi2cs = pd.DataFrame()
-
-    ''' Calculate the poi mix '''
-    for p in country_list:  # p is country abr
-        print('Start: ', p)
-        poi_cs_slice = poi_tool.cal_poi(region=region_name,
-                                        state_kw=None,  # not important in eu scenario
-                                        country_kw=p,
-
-                                        cs_buffer=current_buffer,
-                                        cs_kw_field='location_c',
-                                        cs_buffer_name='location_u',
-
-                                        poi_root_dir=classified_poi_dir + region_name,
-                                        poi_df_lon='lon',
-                                        poi_df_lat='lat',
-
-                                        join_gdf_idx='location_u',
-                                        eu_country_dict=eu_country_dict
-                                        )
-
-        poi2cs = pd.concat([poi2cs, poi_cs_slice])
-
-    ''' Output '''
-    poi2cs.to_csv(result_root_dir + region_name + '//' + str(buff_dist) + 'dist.csv.gz')
+# evcs_eu = load_preprocessed_evcs('europe',
+#                                  usecols=['location_unique_id', 'location_country', 'Latitude', 'Longitude',
+#                                           'COUNTRY'])
+# # evcs_eu = pd.read_csv(r'../data/interim/cleaned_evcs/europe_evcs4plot.csv.csv',
+# #                       usecols=['value', 'location_unique_id',
+# #                                'location_country', 'location_lng', 'location_lat',
+# #                                'COUNTRY', 'NAME_1', 'NAME_2']
+# #                       )
+# eu_country_dict = poi_tool.country_full_name(eu_cs_df=evcs_eu)
+# eu_country_dict.update({'GB': 'great-britain',
+#                         'NL': 'Netherlands',
+#                         'CZ': 'czech-republic',
+#                         'MK': 'Macedonia',
+#                         'MD': 'Moldova',
+#                         'EL': 'Greece'
+#                         })
+#
+# region_name = 'europe'
+#
+# for buff_dist in buffer_dis_list:
+#     ''' Load the buffer shp '''
+#     current_buffer = gpd.read_file(buffer_root_dir + 'europe//' + str(buff_dist) + 'buffer.shp')
+#     country_list: list = evcs_eu['location_country'].drop_duplicates().to_list()  # All countries abr
+#     poi2cs = pd.DataFrame()
+#
+#     ''' Calculate the poi mix '''
+#     for p in country_list:  # p is country abr
+#         print('Start: ', p)
+#         poi_cs_slice = poi_tool.cal_poi(region=region_name,
+#                                         state_kw=None,  # not important in eu scenario
+#                                         country_kw=p,
+#
+#                                         cs_buffer=current_buffer,
+#                                         cs_kw_field='location_c',
+#                                         cs_buffer_name='location_u',
+#
+#                                         poi_root_dir=classified_poi_dir + region_name,
+#                                         poi_df_lon='lon',
+#                                         poi_df_lat='lat',
+#
+#                                         join_gdf_idx='location_u',
+#                                         eu_country_dict=eu_country_dict
+#                                         )
+#
+#         poi2cs = pd.concat([poi2cs, poi_cs_slice])
+#
+#     ''' Output '''
+#     poi2cs.to_csv(result_root_dir + region_name + '//' + str(buff_dist) + 'dist.csv.gz')

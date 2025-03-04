@@ -58,6 +58,9 @@ eu_evcs.to_csv(tool.EUROPE_EVCS_OUTPUT_DIR, encoding='utf-8', compression='gzip'
 usa_evcs = tool.load_usa_evcs()
 logging.warning(f"Original EVCS data shape: {usa_evcs.shape}")
 
+usa_evcs = usa_evcs.drop_duplicates()
+logging.warning(f"Drop duplicated EVCS data shape: {usa_evcs.shape}")
+
 usa_evcs = tool.sjoin_usa_evcs(usa_evcs,
                                r'../data/input/boundary/usa/gadm41_USA_2.shp')
 

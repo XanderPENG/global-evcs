@@ -119,7 +119,7 @@ def plot_all_area_pop(cn_evcs,
             label='EU'
             )
 
-     def add_poly_fit_line(x_values, y_positions, color, degree=3):
+    def add_poly_fit_line(x_values, y_positions, color, degree=3):
         # 计算多项式拟合
         f = np.polyfit(y_positions, x_values, degree)
         p = np.poly1d(f)

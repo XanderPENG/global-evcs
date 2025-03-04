@@ -35,6 +35,9 @@ def create_or_read_evcs_buffer(
         buffer_usecols=None,
         points_merge_on=None,
         buffer_merge_on=None,
+        points_merge_index=False,
+        buffer_merge_index=False,
+        skip_correction=False
 ):
     """
     Create buffer for the cs points using arcpy; which can be modified to use geopandas.
@@ -71,14 +74,25 @@ def create_or_read_evcs_buffer(
         arcpy.gapro.CreateBuffers(points_feature, buffer_feature, "GEODESIC", 'DISTANCE', None,
                                   str(distance) + ' Meters')
 
-        ''' Correct the field '''
         cs_buffer = gpd.read_file(output_dir + '//' + str(distance) + 'buffer.shp')  # Read arcpy shp
 
-        cs_buffers = cs_points_gdf[points_usecols].merge(cs_buffer[buffer_usecols],
-                                                         how='left',
-                                                         left_on=points_merge_on,
-                                                         right_on=buffer_merge_on
-                                                         )
+        if skip_correction:
+            return cs_buffer
+
+        ''' Correct the field '''
+
+        if points_merge_index and buffer_merge_index:
+            cs_buffers = cs_points_gdf[points_usecols].merge(cs_buffer[buffer_usecols],
+                                                             how='left',
+                                                             left_index=True,
+                                                             right_index=True
+                                                             )
+        else:
+            cs_buffers = cs_points_gdf[points_usecols].merge(cs_buffer[buffer_usecols],
+                                                             how='left',
+                                                             left_on=points_merge_on,
+                                                             right_on=buffer_merge_on
+                                                             )
         cs_buffers = gpd.GeoDataFrame(cs_buffers, geometry=cs_buffers['geometry'])
 
         cs_buffers.to_file(output_dir + '\\' + str(distance) + 'buffer.shp', encoding='utf-8')
@@ -125,9 +139,12 @@ if __name__ == '__main__':
                                    lon_col='Longitude',
                                    lat_col='Latitude',
                                    points_usecols=['Station Name', 'City', 'State'],
-                                   buffer_usecols=['Longitude', 'Latitude', 'geometry', 'Station Na', 'City', 'State'],
-                                   points_merge_on=['Station Name', 'City', 'State'],
-                                   buffer_merge_on=['Station Na', 'City', 'State']
+                                   buffer_usecols=['Longitude', 'Latitude', 'geometry'],
+                                   points_merge_index=True,
+                                   buffer_merge_index=True,
+                                   skip_correction=True,
+                                   # points_merge_on=['Station Name', 'City', 'State'],
+                                   # buffer_merge_on=['Station Na', 'City', 'State']
                                    )
         # Europe
         create_or_read_evcs_buffer(input_shp=os.path.abspath(r'../data/input/evcs_shp/europe/clean_europe.shp'),

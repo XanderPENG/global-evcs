@@ -3,6 +3,7 @@ Author: Xander Peng
 Date: 2024/8/1
 Description: This module contains path/functions to read and write data.
 """
+import os
 
 import pandas as pd
 import geopandas as gpd
@@ -192,4 +193,9 @@ def load_processed_evcs_fusion_boundary(region: str,
     evcs_with_boundary = gpd.sjoin(evcs_gdf, boundary, how='left', predicate='within').drop(columns=['geometry'])
     return evcs_with_boundary
 
-
+def check_output_dir(output_dir: str):
+    """
+    Check if the output directory exists, if not, create it.
+    """
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)

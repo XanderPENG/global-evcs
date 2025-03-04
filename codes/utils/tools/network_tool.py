@@ -37,7 +37,7 @@ def load_road(region: str):
     road_dir = r"../data/input/road//"
 
     if region.lower() == "china":
-        return gpd.read_file(road_dir + 'cn/cn_roads.shp',
+        return gpd.read_file(road_dir + 'china/cn_roads.shp',
                              include_fields=['length', 'fclass'])
 
     elif region.lower() == "usa":

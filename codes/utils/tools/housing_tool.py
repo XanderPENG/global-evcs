@@ -60,6 +60,11 @@ def load_housing_data(region: str,
                                      usecols=['name', 'price', 'wgs_lon', 'wgs_lat'])
             cn_housing_data = pd.concat([cn_housing_data, current_df])
 
+        # Filter out the data without housing price:
+        ## try to convert the price into float, if it fails, then delete the row
+        cn_housing_data['price'] = pd.to_numeric(cn_housing_data['price'], errors='coerce')
+        cn_housing_data = cn_housing_data.dropna(subset=['price'])
+
         # Convert the DataFrame to GeoDataFrame
         cn_housing_data_gdf = gpd.GeoDataFrame(cn_housing_data,
                                                geometry=gpd.points_from_xy(cn_housing_data.wgs_lon,
@@ -214,7 +219,7 @@ def match_housing2cs(region: str,
                                )
         ''' Since there must be EVCS without join housing unit, filter them '''
         ''' For Matched data '''
-        matched_data = sjoin_data.dropna()[[i for i in buffer.columns] + ['unitPrice']].reset_index().rename(
+        matched_data = sjoin_data.dropna(subset=["unitPrice"])[[i for i in buffer.columns] + ['unitPrice']].reset_index().rename(
             columns={'index': 'cs_idx'})
         # Cal mean for each cs
         mean_housing = pd.pivot_table(data=matched_data,
@@ -224,7 +229,7 @@ def match_housing2cs(region: str,
                                       aggfunc='mean')
 
         matched_mean_housing = pd.merge(
-            left=matched_data.drop_duplicates('cs_idx')[['cs_idx', 'name', 'NAME_1', 'NAME_2']],
+            left=matched_data.drop_duplicates('cs_idx')[['cs_idx', 'Station Na', 'NAME_1', 'NAME_2']],
             right=mean_housing,
             how='left',
             on='cs_idx')
@@ -240,7 +245,7 @@ def match_housing2cs(region: str,
                                          #   max_distance='100',
                                          distance_col='near_dist'
                                          ).reset_index().drop_duplicates('index').rename(columns={'index': 'cs_idx'})[
-            ['name', 'NAME_1', 'NAME_2', 'unitPrice', 'cs_idx']]
+            ['Station Na', 'NAME_1', 'NAME_2', 'unitPrice', 'cs_idx']]
 
         merged_data = pd.concat([matched_mean_housing, near_housing])
 
@@ -251,6 +256,9 @@ def match_housing2cs(region: str,
         return matched_mean_housing
 
     elif region in ['cn', 'China', 'china', 'CN', 'CHINA']:
+        if 'name' in buffer.columns and 'name' in housing_data.columns:
+            # Change the column name in housing data
+            housing_data = housing_data.rename(columns={'name': 'housing name'})
         # Spatial join the EVCS buffer and housing data
         sjoin_data = gpd.sjoin(left_df=buffer,
                                right_df=housing_data,
@@ -269,7 +277,7 @@ def match_housing2cs(region: str,
                                       aggfunc='mean')
 
         matched_mean_housing = pd.merge(
-            left=matched_data.drop_duplicates('cs_idx')[['cs_idx', 'name', 'pname', 'cityname']],
+            left=matched_data.drop_duplicates('cs_idx')[['cs_idx', 'name', 'province', 'city']],
             right=mean_housing,
             how='left',
             on='cs_idx')
@@ -288,7 +296,7 @@ def match_housing2cs(region: str,
                                              #   max_distance='100',
                                              distance_col='near_dist'
                                              ).reset_index().drop_duplicates('index').rename(
-                columns={'index': 'cs_idx'})[['name', 'pname', 'cityname', 'price', 'cs_idx']]
+                columns={'index': 'cs_idx'})[['name', 'province', 'city', 'price', 'cs_idx']]
 
         merged_data = pd.concat([matched_mean_housing, near_housing])
 
