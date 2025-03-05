@@ -158,7 +158,7 @@ def get_county_housing(region: str,
 
         if value_type == 'both':
             county_housing_count = pd.pivot_table(data=county_housing,
-                                                  index='地名' if county_field is None else county_field,
+                                                  index=['地名'] if county_field is None else county_field,
                                                   values='price' if price_field is None else price_field,
                                                   aggfunc='count').reset_index().rename(
                 columns={'price' if price_field is None else price_field: 'count'})
@@ -267,21 +267,21 @@ def match_housing2cs(region: str,
                                )
         ''' Since there must be EVCS without join housing unit, filter them '''
         ''' For Matched data '''
-        matched_data = sjoin_data.dropna()[[i for i in buffer.columns] + ['price']].reset_index().rename(
+        matched_data = sjoin_data.dropna(subset=['price'])[[i for i in buffer.columns] + ['price']].reset_index().rename(
             columns={'index': 'cs_idx'})
         # Cal mean for each cs
         mean_housing = pd.pivot_table(data=matched_data,
                                       index='cs_idx',
-                                      #    columns=['NAME_1'],
+                                      # columns=['省级', '地名'],
                                       values='price',
                                       aggfunc='mean')
 
         matched_mean_housing = pd.merge(
-            left=matched_data.drop_duplicates('cs_idx')[['cs_idx', 'name', 'province', 'city']],
+            left=matched_data.drop_duplicates('cs_idx')[['cs_idx', 'name', 'province', 'city', '省级', '地名']],
             right=mean_housing,
             how='left',
             on='cs_idx')
-        if len(matched_mean_housing.dropna()) != len(matched_data.drop_duplicates('cs_idx')):
+        if len(matched_mean_housing.dropna(subset=['price'])) != len(matched_data.drop_duplicates('cs_idx')):
             raise ValueError('Unmatched dfs!')
 
         ''' For unmatched data '''
@@ -296,7 +296,7 @@ def match_housing2cs(region: str,
                                              #   max_distance='100',
                                              distance_col='near_dist'
                                              ).reset_index().drop_duplicates('index').rename(
-                columns={'index': 'cs_idx'})[['name', 'province', 'city', 'price', 'cs_idx']]
+                columns={'index': 'cs_idx'})[['name', 'province', 'city', 'price', 'cs_idx', '省级', '地名']]
 
         merged_data = pd.concat([matched_mean_housing, near_housing])
 
