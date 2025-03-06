@@ -12,8 +12,8 @@ import codes.preprocessing.tools as clean_tool
 import codes.utils.tools.io_tool as io_tool
 import transbigdata as tbd
 
-
-""" Calculate the population coverage of EVCS for China"""
+"""
+''' Calculate the population coverage of EVCS for China '''
 china_evcs = io_tool.load_preprocessed_evcs('china')
 
 china_county = pop_tool.load_county("../data/input/boundary/china/地级.shp",
@@ -40,8 +40,9 @@ cs_pop_cov = cs_pop_cov[cs_pop_cov['V'].between(0, 1)]
 
 cs_pop_cov.to_csv("../data/output/texts/population/china_evcs_pop.csv.gz", compression='gzip')
 
+"""
 
-""" Calculate the population coverage of EVCS for the US """
+''' Calculate the population coverage of EVCS for the US '''
 # Get the PopGrid sheets list and state name list
 pop_state_name, us_pop_sheets = pop_tool.load_us_pop_sheets()
 
@@ -99,9 +100,11 @@ us_county_pop = pop_tool.county2pop(us_county_gdf, us_pop_gdf, 'GID_2', 'Z')
 us_cs_pop_cov = pop_tool.cal_v(us_county_pop, us_county_pop_cs, 'GID_2',
                                 'Z')
 us_cs_pop_cov = us_cs_pop_cov[us_cs_pop_cov['V'].between(0, 1)]
-us_cs_pop_cov = clean_tool.filter_county(us_cs_pop_cov,
-                                         cols=['NAME_1', 'NAME_2'])
+# us_cs_pop_cov = clean_tool.filter_county(us_cs_pop_cov,
+#                                          cols=['NAME_1', 'NAME_2'])
 us_cs_pop_cov.to_csv("../data/output/texts/population/usa_evcs_pop.csv.gz")
+
+
 
 """ Calculate the population coverage of EVCS for Europe """
 # Load the EVCS data
@@ -146,7 +149,7 @@ for eu_country_idx, eu_country in enumerate(eu_country_name_list):
         current_country_bound_filename: str = list(filter(lambda x: '_2.shp' in x, current_country_bound_files_list))[0]
         current_country_bound = gpd.read_file(
             eu_bound_root + '//' + 'EU_' + correct_eu_country + '//' + current_country_bound_filename,
-            include_fields=['GID_0', 'COUNTRY', 'NAME_1', 'NAME_2'],
+            include_fields=['GID_0', 'GID_2', 'COUNTRY', 'NAME_1', 'NAME_2'],
             crs='EPSG: 4326')
     else:
         continue
@@ -200,7 +203,7 @@ for eu_country_idx, eu_country in enumerate(eu_country_name_list):
                                                             how='left',
                                                             predicate='contains')
     # Get max and min population in each county
-    current_country_county_pop_maxAndmin = current_country_bound2pop.groupby(['GID_0', 'NAME_1', 'NAME_2'])['Z'].agg(
+    current_country_county_pop_maxAndmin = current_country_bound2pop.groupby(['GID_2', 'NAME_1', 'NAME_2'])['Z'].agg(
         ['max', 'min'])
     current_country_county_pop_maxAndmin.reset_index(inplace=True)
 
@@ -215,7 +218,7 @@ for eu_country_idx, eu_country in enumerate(eu_country_name_list):
     """
     current_country_css_county_pop_mm = current_country_css2pop2county.merge(current_country_county_pop_maxAndmin,
                                                                              how='left',
-                                                                             on=['GID_0', 'NAME_1', 'NAME_2'])
+                                                                             on=['GID_2', 'NAME_1', 'NAME_2'])
 
     """ 
     Calculate 'V' value for each css 
@@ -228,6 +231,6 @@ for eu_country_idx, eu_country in enumerate(eu_country_name_list):
     eu_evcs_pop = pd.concat([eu_evcs_pop, current_country_css_county_pop_mm])
 
 eu_evcs_pop = eu_evcs_pop[eu_evcs_pop['V'].between(0, 1)]
-eu_evcs_pop = clean_tool.filter_county(eu_evcs_pop,
-                                       cols=['NAME_1', 'NAME_2'])
+# eu_evcs_pop = clean_tool.filter_county(eu_evcs_pop,
+#                                        cols=['NAME_1', 'NAME_2'])
 eu_evcs_pop.to_csv("../data/output/texts/population/europe_evcs_pop.csv.gz")
