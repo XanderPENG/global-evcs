@@ -67,7 +67,7 @@ def cal_poi(
                                                          'poland', 'russia', 'spain']:
         poi_df = pd.DataFrame()
         for f in os.listdir(target_dir):
-            df = pd.read_csv(target_dir + '\\' + f)
+            df = pd.read_csv(target_dir + '//' + f)
             df['category'] = f.replace('.csv', '') if 'ltf' not in f else 'lt'
             poi_df = pd.concat([poi_df, df])
     else:

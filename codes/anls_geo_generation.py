@@ -5,6 +5,7 @@ Description: This script is used to generate the geo files (at province/state an
 """
 import logging
 
+import numpy as np
 import geopandas as gpd
 import pandas as pd
 
@@ -20,10 +21,8 @@ usa_county_boundary = gpd.read_file(r"../data/input/boundary/usa/gadm41_USA_2.sh
 europe_city_boundary = gpd.read_file(r"../data/input/boundary/europe/europe_city_boundary.shp.zip")
 
 
-logging.info("Start to read population data.")
+
 ''' Population '''
-
-
 def read_pop_data(region: Region):
     logging.info(f"Start to read {region.value} population data.")
     if region == Region.CHINA:
@@ -104,6 +103,13 @@ def read_poi_results(region: Region):
         logging.info("Start to read europe poi data.")
         europe_poi_results = {radius: pd.read_csv(f"../data/output/texts/poi/europe/{radius}dist.csv.gz")
                               for radius in [300, 800, 1000]}
+
+        for radius, eu_result in europe_poi_results.items():
+            if eu_result['Mix'].max() == np.inf or eu_result['Mix'].min() == -np.inf:
+                logging.warning(f"poi mix has inf value in {radius} radius - delete it.")
+                europe_poi_results[radius] = eu_result.query("Mix != inf")
+                eu_result.to_csv(f"../data/output/texts/poi/europe/{radius}dist.csv.gz")
+
         for radius, europe_poi_result_ in europe_poi_results.items():
             eu_poi_results_gdf_ = gpd.GeoDataFrame(europe_poi_result_,
                                                    geometry=gpd.points_from_xy(europe_poi_result_['Longitude'],
@@ -180,19 +186,26 @@ def read_road_results(region: Region):
     elif region == Region.EUROPE:
         europe_road_results = {radius: pd.read_csv(f"../data/output/texts/network/europe/{radius}_roads.csv.gz")
                                for radius in [300, 800, 1000]}
+
+        for radius, eu_result in europe_road_results.items():
+            if eu_result['city_den_r'].max() == np.inf:
+                logging.warning(f"city_den_r has inf value in {radius} radius - delete it.")
+                europe_road_results[radius] = eu_result.query("city_den_r != inf")
+                eu_result.to_csv(f"../data/output/texts/network/europe/{radius}_roads.csv.gz")
+
         ''' Since there is no GID_2 field, add it by sjoin with the boundary data '''
-        for radius, europe_road_result_ in europe_road_results.items():
-            eu_road_results_gdf_ = gpd.GeoDataFrame(europe_road_result_,
-                                                    geometry=gpd.points_from_xy(europe_road_result_['Longitude'],
-                                                                                europe_road_result_['Latitude']),
-                                                    crs="EPSG:4326")
-            eu_road_results_with_bound_gdf_ = gpd.sjoin(eu_road_results_gdf_,
-                                                        europe_city_boundary.drop(
-                                                            columns=['COUNTRY', 'NAME_1', 'NAME_2']),
-                                                        how='left',
-                                                        predicate='within')
-            europe_road_results[radius] = eu_road_results_with_bound_gdf_[
-                europe_road_result_.columns.tolist() + ['GID_0', 'GID_2']]
+        # for radius, europe_road_result_ in europe_road_results.items():
+        #     eu_road_results_gdf_ = gpd.GeoDataFrame(europe_road_result_,
+        #                                             geometry=gpd.points_from_xy(europe_road_result_['Longitude'],
+        #                                                                         europe_road_result_['Latitude']),
+        #                                             crs="EPSG:4326")
+        #     eu_road_results_with_bound_gdf_ = gpd.sjoin(eu_road_results_gdf_,
+        #                                                 europe_city_boundary.drop(
+        #                                                     columns=['COUNTRY', 'NAME_1', 'NAME_2']),
+        #                                                 how='left',
+        #                                                 predicate='within')
+        #     europe_road_results[radius] = eu_road_results_with_bound_gdf_[
+        #         europe_road_result_.columns.tolist() + ['GID_0', 'GID_2']]
 
         return europe_road_results
 
@@ -327,22 +340,22 @@ def output_region_housing_geo_files(region: Region, housing_results):
 
 if __name__ == '__main__':
     """ population """
-    for region in [
-        # Region.CHINA,
-        # Region.USA,
-        Region.EUROPE
-    ]:
-        pop_results = read_pop_data(region)
-        output_region_pop_geo_files(region, pop_results)
+    # for region in [
+    #     # Region.CHINA,
+    #     # Region.USA,
+    #     Region.EUROPE
+    # ]:
+    #     pop_results = read_pop_data(region)
+    #     output_region_pop_geo_files(region, pop_results)
 
     """ poi """
-    for region in [
-        # Region.CHINA,
-        # Region.USA,
-        Region.EUROPE
-    ]:
-        poi_results = read_poi_results(region)
-        output_region_poi_geo_files(region, poi_results)
+    # for region in [
+    #     # Region.CHINA,
+    #     # Region.USA,
+    #     Region.EUROPE
+    # ]:
+    #     poi_results = read_poi_results(region)
+    #     output_region_poi_geo_files(region, poi_results)
 
     """ road """
     for region in [
@@ -354,9 +367,9 @@ if __name__ == '__main__':
         output_region_road_geo_files(region, road_results)
 
     """ housing """
-    for region in [
-        # Region.CHINA,
-        # Region.USA
-    ]:
-        housing_results = read_housing_results(region)
-        output_region_housing_geo_files(region, housing_results)
+    # for region in [
+    #     # Region.CHINA,
+    #     # Region.USA
+    # ]:
+    #     housing_results = read_housing_results(region)
+    #     output_region_housing_geo_files(region, housing_results)

@@ -10,6 +10,7 @@ import pandas as pd
 import geopandas as gpd
 import codes.utils.tools.network_tool as network_tool
 import codes.utils.tools.io_tool as io_tool
+import codes.preprocessing.tools as tool
 
 
 ''' Global path settings '''
@@ -103,296 +104,313 @@ country_area_all.columns = ['country', 'area']
 
 
 """ USA """
-# us_evcs = network_tool.load_evcs('usa')
-us_evcs = io_tool.load_processed_evcs_fusion_boundary(region='usa',
-                                                      evcs_usecols=['Station Name', 'City', 'State', 'Latitude', 'Longitude'],
-                                                      evcs_lat_col='Latitude',
-                                                      evcs_lon_col='Longitude',
-                                                      boundary_level='city',
-                                                      boundary_usecols=['NAME_1', 'NAME_2'],
-                                                      index_col=0
-                                                      )
-
-''' Load road network '''
-us_city_bound = gpd.read_file(BOUNDARY_DIR + 'usa//gadm41_USA_2.shp',
-                              includ_fields=['NAME_1', 'NAME_2', 'area'])
-
-''' calculate the road density around EVCS by state loop due to the huge data size '''
-us_buffers = {radius: gpd.read_file(EVCS_BUFFER_DIR + 'usa//' + str(radius) + 'buffer.shp')
-              for radius in [300, 800, 1000]}
-results_cs = {radius: pd.DataFrame()
-              for radius in [300, 800, 1000]}
-
-region_cs= us_evcs.copy(deep=True)
-states = set(us_evcs['NAME_1'].dropna().tolist())
-
-''' Read roads and processing cs by state '''
-country_road_length = 0
-for idx, state_name in enumerate(states):
-
-    print('Processing: ' + str(idx) + ':' + state_name)
-
-    ''' Load current state road with length '''
-    try:
-        state_road_shp = gpd.read_file(r"../data/input/road/usa//" + state_name + '//len_roads.shp')
-    except:
-        state_name = input('No such file, plz check the state name and input the correct name')
-        state_road_shp = gpd.read_file(r"../data/input/road/usa//" + state_name + '//len_roads.shp')
-
-    country_road_length += state_road_shp['length'].sum()
-    """
-    Calculate the city road density
-    """
-
-    ''' Spatial join the city bound with road shp '''
-    # 3 fields in @us_city_road: ['NAME_1', 'NAME_2', 'length']
-    us_city_road = gpd.sjoin(us_city_bound,
-                             state_road_shp,
-                             how='inner',
-                             predicate='contains').groupby(['NAME_1', 'NAME_2'])['length'].sum().reset_index()
-    us_city_road = us_city_road.merge(us_city_bound[['NAME_1', 'NAME_2', 'area']],
-                                      on=['NAME_1', 'NAME_2'],
-                                      how='inner')
-    # 5 fields in @us_city_road: ['NAME_1', 'NAME_2', 'length', 'area', 'city_dens']
-    us_city_road['city_dens'] = us_city_road['length'] / us_city_road['area']
-    us_city_road.dropna(inplace=True)
-
-    ''' EVCS with roads '''
-    for radius, buffer in us_buffers.items():
-        print("Start " + str(radius) + ' Meter Buffer')
-        # Correct the CRS
-        if buffer.crs is None:
-            buffer.crs = 'EPSG:4326'
-
-        ''' Spatial join '''
-        # 2 fields in @cs_roads: [ORIG_FID, length]
-        cs_roads: gpd.GeoDataFrame = gpd.sjoin(left_df=buffer,
-                                               right_df=state_road_shp,
-                                               how='inner',
-                                               predicate='contains').groupby(['Station Na','State','City'])['length'].sum().reset_index()
-
-        ''' Calculate road density of each EVCS '''
-        cs_roads['density'] = cs_roads['length'] / ((radius * 0.001) ** 2 * np.pi)
-
-        # Merge the results into clip cs file
-        clip_cs = region_cs.query("NAME_1 == @state_name")  # A part of cs with state as state_name
-        print("Start merge clip_cs with the shape: " + str(len(clip_cs)))
-        clip_cs = clip_cs.merge(cs_roads,
-                                how='left',
-                                left_on=['Station Name', 'State', 'City'],
-                                right_on=['Station Na','State','City'])
-        ''' Add city road density into each EVCS record '''
-        clip_cs = clip_cs.merge(us_city_road[['NAME_1', 'NAME_2', 'city_dens']],
-                                on=['NAME_1', 'NAME_2'],
-                                how='inner'
-                                )
-        # Calculate city-level road density ratio
-        clip_cs['city_den_r'] = clip_cs['density'] / clip_cs['city_dens']
-        clip_cs = clip_cs.dropna()
-        print("Finish " + str(radius) + ' Meter Buffer' + 'clip_cs shape: ' + str(len(clip_cs)))
-        ''' Update the result cs '''
-        result_cs_df = results_cs.get(radius)
-        result_cs_df = pd.concat([result_cs_df, clip_cs])
-        results_cs.update({radius: result_cs_df})
-
-''' Calculate the region-level road density and the ratio '''
-us_area = country_area_all.query("country == 'usa'").iloc[0, 1]
-region_density: float = country_road_length / us_area  # km/km^2
-
-# Calculate the region road density ratio and output
-for radius, result_cs in results_cs.items():
-    result_cs['region_density'] = region_density
-    result_cs['density_r'] = result_cs['density'] / result_cs['region_density']
-
-    os.makedirs(OUTPUT_DIR + 'usa//', exist_ok=True)
-    result_cs.to_csv(OUTPUT_DIR + 'usa//' + str(radius) + '_roads.csv.gz')
-
-
-""" Europe """
-# eu_raw_road_dir = r"../data/input/road/europe//"
+# # us_evcs = network_tool.load_evcs('usa')
+# us_evcs = io_tool.load_processed_evcs_fusion_boundary(region='usa',
+#                                                       evcs_usecols=['Station Name', 'City', 'State', 'Latitude', 'Longitude'],
+#                                                       evcs_lat_col='Latitude',
+#                                                       evcs_lon_col='Longitude',
+#                                                       boundary_level='city',
+#                                                       boundary_usecols=['NAME_1', 'NAME_2'],
+#                                                       index_col=0
+#                                                       )
 #
-# eu_evcs = io_tool.load_preprocessed_evcs(region='europe',
-#                                          usecols=['location_unique_id', 'COUNTRY', 'NAME_1', 'NAME_2']
-#                                          )
-# eu_buffers = {}
-# for radius in [300, 800, 1000]:
-#     eu_buffer_ = gpd.read_file(EVCS_BUFFER_DIR + 'europe//' + str(radius) + 'buffer.shp')
-#     origin_num = eu_buffer_.shape[0]
-#     eu_buffer = eu_buffer_.merge(eu_evcs,
-#                                   left_on=['location_u', 'COUNTRY'],
-#                                   right_on=['location_unique_id', 'COUNTRY'],
-#                                   how='inner'
-#                                   )
-#     print(f"Buffer {radius}m: {origin_num - eu_buffer.shape[0]} EVCS are removed")
-#     eu_buffers.update({radius: eu_buffer})
+# ''' Load road network '''
+# us_city_bound = gpd.read_file(BOUNDARY_DIR + 'usa//gadm41_USA_2.shp',
+#                               includ_fields=['NAME_1', 'NAME_2', 'area'])
 #
-# # Initialize some df to store results
+# ''' calculate the road density around EVCS by state loop due to the huge data size '''
+# us_buffers = {radius: gpd.read_file(EVCS_BUFFER_DIR + 'usa//' + str(radius) + 'buffer.shp')
+#               for radius in [300, 800, 1000]}
 # results_cs = {radius: pd.DataFrame()
 #               for radius in [300, 800, 1000]}
 #
-# country_list = list(set(eu_buffers.get(300)['COUNTRY']))
+# region_cs= us_evcs.copy(deep=True)
+# states = set(us_evcs['NAME_1'].dropna().tolist())
 #
-# ''' Read roads and processing cs by country '''
-# eu_road_length = 0  # Initilize the road length
+# ''' Read roads and processing cs by state '''
+# country_road_length = 0
+# for idx, state_name in enumerate(states):
 #
-# for idx, row in eu_buffers.get(300)[['location_c', 'COUNTRY']].drop_duplicates().reset_index(drop=True).iterrows():
-#     country_name = row['COUNTRY']
-#     country_abr = row['location_c']
-#     if country_abr == 'EL':
-#         country_abr = 'GR'
+#     print('Processing: ' + str(idx) + ':' + state_name)
 #
-#     print('Processing: ' + str(idx) + ':' + country_name)
+#     ''' Load current state road with length '''
+#     try:
+#         state_road_shp = gpd.read_file(r"../data/input/road/usa//" + state_name + '//len_roads.shp')
+#     except:
+#         state_name = input('No such file, plz check the state name and input the correct name')
+#         state_road_shp = gpd.read_file(r"../data/input/road/usa//" + state_name + '//len_roads.shp')
 #
+#     country_road_length += state_road_shp['length'].sum()
 #     """
-#         Load after length-calculation road;
-#         Otherwise,
-#         Load original road, and calculate the length
+#     Calculate the city road density
 #     """
-#     out_roads_dir = r'../data/input/road/europe//'
 #
-#     ''' 1. Load road with length file (if applicable) '''
-#     if os.path.isfile(out_roads_dir + country_name + '//' + 'len_roads.shp'):
-#         print(' Load roads ')
-#         road_shp = gpd.read_file(out_roads_dir + country_name + '//' + 'len_roads.shp',
-#                                  crs='EPSG: 4326')
-#         eu_road_length += road_shp['length'].sum()
+#     ''' Spatial join the city bound with road shp '''
+#     # 3 fields in @us_city_road: ['NAME_1', 'NAME_2', 'length']
+#     us_city_road = gpd.sjoin(us_city_bound,
+#                              state_road_shp,
+#                              how='inner',
+#                              predicate='contains').groupby(['NAME_1', 'NAME_2'])['length'].sum().reset_index()
+#     us_city_road = us_city_road.merge(us_city_bound[['NAME_1', 'NAME_2', 'area']],
+#                                       on=['NAME_1', 'NAME_2'],
+#                                       how='inner')
+#     # 5 fields in @us_city_road: ['NAME_1', 'NAME_2', 'length', 'area', 'city_dens']
+#     us_city_road['city_dens'] = us_city_road['length'] / us_city_road['area']
+#     us_city_road.dropna(inplace=True)
 #
-#     else:  # ''' 2. No such file '''
-#         road_shp_folder = network_tool.filter_folder(country_name, eu_raw_road_dir)  # Get the corresponding country folder name
-#         print('finish find folder')
-#         ''' Load current country road '''
-#         road_shp: gpd.GeoDataFrame = network_tool.load_roads(eu_raw_road_dir + '//' + road_shp_folder)
-#         print('finish load road')
-#         class_str = ['motorway', 'motorway_link', 'trunk', 'trunk_link', 'primary', 'primary_link',
-#                      'secondary', 'secondary_link', 'tertiary', 'tertiary_link', 'unclassified',
-#                      'residential', 'living_street', 'service']
-#
-#         road_shp = road_shp.query("fclass in @class_str")  # Filter target class roads
-#
-#         ''' Caculate the road length '''
-#         road_shp['length'] = road_shp['geometry'].map(lambda x: network_tool.cal_length(x))
-#         print('finish cal length')
-#         eu_road_length += road_shp['length'].sum()  # Update the country-level roads length
-#
-#         ''' Output the roads shp '''
-#
-#         os.makedirs(out_roads_dir + country_name + '//', exist_ok=True)
-#         road_shp.to_file(out_roads_dir + country_name + '//' + 'len_roads.shp')
-#
-#         print('finish output road')
-#
-#     ''' EVCS with roads (This can only get one country's cs-road_density)'''
-#     for radius, buffer in eu_buffers.items():
+#     ''' EVCS with roads '''
+#     for radius, buffer in us_buffers.items():
 #         print("Start " + str(radius) + ' Meter Buffer')
 #         # Correct the CRS
 #         if buffer.crs is None:
 #             buffer.crs = 'EPSG:4326'
-#         print("Start spatial join EVCS and roads")
+#
 #         ''' Spatial join '''
+#         # 2 fields in @cs_roads: [ORIG_FID, length]
 #         cs_roads: gpd.GeoDataFrame = gpd.sjoin(left_df=buffer,
-#                                                right_df=road_shp,
+#                                                right_df=state_road_shp,
 #                                                how='inner',
-#                                                predicate='contains')
+#                                                predicate='contains').groupby(['Station Na','State','City'])['length'].sum().reset_index()
 #
-#         ''' Calculate road density of each cs '''
-#         cs_road_density: pd.DataFrame = cs_roads.drop(columns=['geometry']).groupby('location_u').sum()
-#         cs_road_density['density'] = cs_road_density['length'] / ((radius * 0.001) ** 2 * np.pi)
-#         cs_road_density = cs_road_density[['length', 'density']]
-#         ''' Calculate the city-level density ratio, i.e.,
-#             the road density of EVCS / the density of road in this city'''
-#         ''' Spatial join the city-level bound with the road'''
-#         # Load boundary: 2nd-level boundary
-#         eu_bound_root = BOUNDARY_DIR + 'europe'
-#         try:
-#             current_country_bound_files_list = os.listdir(
-#                 eu_bound_root + '//' + 'EU_' + country_abr)  # all level of boundary shp of current country
-#         except:
-#             print('No such folder: ' + eu_bound_root + '//' + 'EU_' + country_abr)
-#             country_abr = input('Plz input the correct country abbreviation as boundary folder name')
-#             current_country_bound_files_list = os.listdir(
-#                 eu_bound_root + '//' + 'EU_' + country_abr)
+#         ''' Calculate road density of each EVCS '''
+#         cs_roads['density'] = cs_roads['length'] / ((radius * 0.001) ** 2 * np.pi)
 #
-#         if any(list(map(lambda x: '_2.shp' in x, current_country_bound_files_list))):  # if the 2nd level is available
+#         # Merge the results into clip cs file
+#         clip_cs = region_cs.query("NAME_1 == @state_name")  # A part of cs with state as state_name
+#         print("Start merge clip_cs with the shape: " + str(len(clip_cs)))
+#         clip_cs = clip_cs.merge(cs_roads,
+#                                 how='left',
+#                                 left_on=['Station Name', 'State', 'City'],
+#                                 right_on=['Station Na','State','City'])
+#         ''' Add city road density into each EVCS record '''
+#         clip_cs = clip_cs.merge(us_city_road[['NAME_1', 'NAME_2', 'city_dens']],
+#                                 on=['NAME_1', 'NAME_2'],
+#                                 how='inner'
+#                                 )
+#         # Calculate city-level road density ratio
+#         clip_cs['city_den_r'] = clip_cs['density'] / clip_cs['city_dens']
+#         clip_cs = clip_cs.dropna()
+#         print("Finish " + str(radius) + ' Meter Buffer' + 'clip_cs shape: ' + str(len(clip_cs)))
+#         ''' Update the result cs '''
+#         result_cs_df = results_cs.get(radius)
+#         result_cs_df = pd.concat([result_cs_df, clip_cs])
+#         results_cs.update({radius: result_cs_df})
 #
-#             current_country_bound_filename: str = \
-#             list(filter(lambda x: '_2.shp' in x, current_country_bound_files_list))[0]
-#             current_country_bound = gpd.read_file(
-#                 eu_bound_root + '\\' + 'EU_' + country_abr + '\\' + current_country_bound_filename,
-#                 include_fields=['GID_0', 'COUNTRY', 'NAME_1', 'NAME_2'],
-#                 crs='EPSG: 4326')
-#         elif any(list(map(lambda x: '_1.shp' in x, current_country_bound_files_list))):  # if the 1st level is available
+# ''' Calculate the region-level road density and the ratio '''
+# us_area = country_area_all.query("country == 'usa'").iloc[0, 1]
+# region_density: float = country_road_length / us_area  # km/km^2
 #
-#             current_country_bound_filename: str = \
-#             list(filter(lambda x: '_1.shp' in x, current_country_bound_files_list))[0]
-#             current_country_bound: gpd.GeoDataFrame = gpd.read_file(
-#                 eu_bound_root + '\\' + 'EU_' + country_abr + '\\' + current_country_bound_filename,
-#                 include_fields=['GID_0', 'COUNTRY', 'NAME_1'],
-#                 crs='EPSG: 4326')
-#             current_country_bound['NAME_2'] = current_country_bound['NAME_1']
-#             current_country_bound = current_country_bound.reindex(
-#                 columns=['GID_0', 'COUNTRY', 'NAME_1', 'NAME_2', 'geometry'])
-#         else:  # Only the 0-level boundary
-#             current_country_bound_filename: str = \
-#             list(filter(lambda x: '_0.shp' in x, current_country_bound_files_list))[0]
-#             current_country_bound: gpd.GeoDataFrame = gpd.read_file(
-#                 eu_bound_root + '\\' + 'EU_' + country_abr + '\\' + current_country_bound_filename,
-#                 crs='EPSG: 4326')
-#             current_country_bound['NAME_1'] = current_country_bound['COUNTRY']
-#             current_country_bound['NAME_2'] = current_country_bound['COUNTRY']
-#             current_country_bound = current_country_bound.reindex(
-#                 columns=['GID_0', 'COUNTRY', 'NAME_1', 'NAME_2', 'geometry'])
-#
-#         # current country road-density
-#         tem_query_cname = network_tool.identify_country(kw=country_name,
-#                                                         l=country_area_all['country'].tolist())
-#         current_country_area = country_area_all.query("country == @tem_query_cname").iloc[0, 1]
-#         current_country_road_density: float = road_shp['length'].sum() / current_country_area
-#
-#         print("Start spatial join city bounds and roads")
-#         # Spatial join the city-level bound with the road
-#         city_bound2road = gpd.sjoin(left_df=current_country_bound,
-#                                     right_df=road_shp,
-#                                     how='left',
-#                                     predicate='contains')
-#         tem_city_road_length = city_bound2road.groupby(['NAME_1', 'NAME_2'])['length'].sum().reset_index()
-#         tem_city_road_density = city_area_all.merge(tem_city_road_length,
-#                                                     left_on=['state', 'city'],
-#                                                     right_on=['NAME_1', 'NAME_2'],
-#                                                     how='right')
-#         tem_city_road_density['city_dens'] = tem_city_road_density['length'] / tem_city_road_density['area']
-#         tem_city_road_density['city_dens'].fillna(tem_city_road_density['length'] / current_country_road_density,
-#                                                   inplace=True)
-#
-#         print("Start merge result")
-#         ''' City-level density ratio '''
-#         tem_cs_idx = cs_road_density.index.tolist()
-#         tem_cs = buffer.query(" @tem_cs_idx in location_u")
-#         tem_cs = tem_cs.merge(cs_road_density.reset_index()[['location_u', 'density']],
-#                               on='location_u',
-#                               how='left')
-#         tem_cs = tem_cs.merge(tem_city_road_density[['NAME_1', 'NAME_2', 'city_dens']],
-#                               on=['NAME_1', 'NAME_2'],
-#                               how='left')
-#
-#         tem_cs['city_den_r'] = tem_cs['density'] / tem_cs['city_dens']
-#         tem_cs.dropna(inplace=True)
-#
-#         results_cs.update({radius: pd.concat([results_cs.get(radius), tem_cs]
-#                                              )
-#                            })
-#
-# """ Finish all countries;
-#     Calculate the region road density, and the region-road-density-ratio
-#     for all buffers
-#     """
-#
-# eu_area = country_area_all.query("country not in ['china','usa']")['area'].sum()
-# region_density: float = eu_road_length / eu_area  # km/km^2
-#
-# # Calculate the ratio and output
+# # Calculate the region road density ratio and output
 # for radius, result_cs in results_cs.items():
 #     result_cs['region_density'] = region_density
 #     result_cs['density_r'] = result_cs['density'] / result_cs['region_density']
-#     os.makedirs(OUTPUT_DIR + 'europe//', exist_ok=True)
-#     result_cs.to_csv(OUTPUT_DIR + 'europe//' + str(radius) + '_roads.csv.gz')
+#
+#     os.makedirs(OUTPUT_DIR + 'usa//', exist_ok=True)
+#     result_cs.to_csv(OUTPUT_DIR + 'usa//' + str(radius) + '_roads.csv.gz')
+
+
+""" Europe """
+eu_raw_road_dir = r"../data/input/road/europe//"
+
+eu_evcs = io_tool.load_preprocessed_evcs(region='europe',
+                                         usecols=['location_unique_id', 'COUNTRY', 'NAME_1', 'NAME_2', 'Latitude', 'Longitude']
+                                         )
+eu_city_boundary = tool.load_europe_boundary("city")
+
+''' Add the GID_2 field to evcs '''
+eu_evcs_gdf = gpd.GeoDataFrame(eu_evcs,
+                               geometry=gpd.points_from_xy(eu_evcs['Longitude'], eu_evcs['Latitude']),
+                               crs='EPSG:4326')
+eu_evcs_gdf = gpd.sjoin(eu_evcs_gdf,
+                        eu_city_boundary[['GID_2','geometry']],
+                        how='left',
+                        predicate='within')
+eu_evcs_gdf = eu_evcs_gdf[['location_unique_id', 'COUNTRY', 'NAME_1', 'NAME_2', 'GID_2']]
+
+eu_buffers = {}
+for radius in [300, 800, 1000]:
+    eu_buffer_ = gpd.read_file(EVCS_BUFFER_DIR + 'europe//' + str(radius) + 'buffer.shp')
+    origin_num = eu_buffer_.shape[0]
+    eu_buffer = eu_buffer_.merge(eu_evcs_gdf,
+                                  left_on=['location_u', 'COUNTRY'],
+                                  right_on=['location_unique_id', 'COUNTRY'],
+                                  how='inner'
+                                  )
+
+    print(f"Buffer {radius}m: {origin_num - eu_buffer.shape[0]} EVCS are removed")
+    eu_buffers.update({radius: eu_buffer})
+
+# Initialize some df to store results
+results_cs = {radius: pd.DataFrame()
+              for radius in [300, 800, 1000]}
+
+country_list = list(set(eu_buffers.get(300)['COUNTRY']))
+
+''' Read roads and processing cs by country '''
+eu_road_length = 0  # Initilize the road length
+
+for idx, row in eu_buffers.get(300)[['location_c', 'COUNTRY']].drop_duplicates().reset_index(drop=True).iterrows():
+    country_name = row['COUNTRY']
+    country_abr = row['location_c']
+    if country_abr == 'EL':
+        country_abr = 'GR'
+
+    print('Processing: ' + str(idx) + ':' + country_name)
+
+    """
+        Load after length-calculation road;
+        Otherwise,
+        Load original road, and calculate the length
+    """
+    out_roads_dir = r'../data/input/road/europe//'
+
+    ''' 1. Load road with length file (if applicable) '''
+    if os.path.isfile(out_roads_dir + country_name + '//' + 'len_roads.shp'):
+        print(' Load roads ')
+        road_shp = gpd.read_file(out_roads_dir + country_name + '//' + 'len_roads.shp',
+                                 crs='EPSG: 4326')
+        eu_road_length += road_shp['length'].sum()
+
+    else:  # ''' 2. No such file '''
+        road_shp_folder = network_tool.filter_folder(country_name, eu_raw_road_dir)  # Get the corresponding country folder name
+        print('finish find folder')
+        ''' Load current country road '''
+        road_shp: gpd.GeoDataFrame = network_tool.load_roads(eu_raw_road_dir + '//' + road_shp_folder)
+        print('finish load road')
+        class_str = ['motorway', 'motorway_link', 'trunk', 'trunk_link', 'primary', 'primary_link',
+                     'secondary', 'secondary_link', 'tertiary', 'tertiary_link', 'unclassified',
+                     'residential', 'living_street', 'service']
+
+        road_shp = road_shp.query("fclass in @class_str")  # Filter target class roads
+
+        ''' Caculate the road length '''
+        road_shp['length'] = road_shp['geometry'].map(lambda x: network_tool.cal_length(x))
+        print('finish cal length')
+        eu_road_length += road_shp['length'].sum()  # Update the country-level roads length
+
+        ''' Output the roads shp '''
+
+        os.makedirs(out_roads_dir + country_name + '//', exist_ok=True)
+        road_shp.to_file(out_roads_dir + country_name + '//' + 'len_roads.shp')
+
+        print('finish output road')
+
+    ''' EVCS with roads (This can only get one country's cs-road_density)'''
+    for radius, buffer in eu_buffers.items():
+        print("Start " + str(radius) + ' Meter Buffer')
+        # Correct the CRS
+        if buffer.crs is None:
+            buffer.crs = 'EPSG:4326'
+        print("Start spatial join EVCS and roads")
+        ''' Spatial join '''
+        cs_roads: gpd.GeoDataFrame = gpd.sjoin(left_df=buffer,
+                                               right_df=road_shp,
+                                               how='inner',
+                                               predicate='contains')
+
+        ''' Calculate road density of each cs '''
+        cs_road_density: pd.DataFrame = cs_roads.drop(columns=['geometry']).groupby('location_u').sum()
+        cs_road_density['density'] = cs_road_density['length'] / ((radius * 0.001) ** 2 * np.pi)
+        cs_road_density = cs_road_density[['length', 'density']]
+        ''' Calculate the city-level density ratio, i.e.,
+            the road density of EVCS / the density of road in this city'''
+        ''' Spatial join the city-level bound with the road'''
+        # Load boundary: 2nd-level boundary
+        eu_bound_root = BOUNDARY_DIR + 'europe'
+        try:
+            current_country_bound_files_list = os.listdir(
+                eu_bound_root + '//' + 'EU_' + country_abr)  # all level of boundary shp of current country
+        except:
+            print('No such folder: ' + eu_bound_root + '//' + 'EU_' + country_abr)
+            country_abr = input('Plz input the correct country abbreviation as boundary folder name')
+            current_country_bound_files_list = os.listdir(
+                eu_bound_root + '//' + 'EU_' + country_abr)
+
+        if any(list(map(lambda x: '_2.shp' in x, current_country_bound_files_list))):  # if the 2nd level is available
+
+            current_country_bound_filename: str = \
+            list(filter(lambda x: '_2.shp' in x, current_country_bound_files_list))[0]
+            current_country_bound = gpd.read_file(
+                eu_bound_root + '//' + 'EU_' + country_abr + '//' + current_country_bound_filename,
+                include_fields=['GID_2', 'COUNTRY', 'NAME_1', 'NAME_2', 'area'],
+                crs='EPSG: 4326')
+        else:
+            print('No such 2nd level shp file: ' + eu_bound_root + '//' + 'EU_' + country_abr)
+            continue
+        # elif any(list(map(lambda x: '_1.shp' in x, current_country_bound_files_list))):  # if the 1st level is available
+        #
+        #     current_country_bound_filename: str = \
+        #     list(filter(lambda x: '_1.shp' in x, current_country_bound_files_list))[0]
+        #     current_country_bound: gpd.GeoDataFrame = gpd.read_file(
+        #         eu_bound_root + '//' + 'EU_' + country_abr + '//' + current_country_bound_filename,
+        #         include_fields=['GID_0', 'COUNTRY', 'NAME_1'],
+        #         crs='EPSG: 4326')
+        #     current_country_bound['NAME_2'] = current_country_bound['NAME_1']
+        #     current_country_bound = current_country_bound.reindex(
+        #         columns=['GID_0', 'COUNTRY', 'NAME_1', 'NAME_2', 'geometry'])
+        # else:  # Only the 0-level boundary
+        #     current_country_bound_filename: str = \
+        #     list(filter(lambda x: '_0.shp' in x, current_country_bound_files_list))[0]
+        #     current_country_bound: gpd.GeoDataFrame = gpd.read_file(
+        #         eu_bound_root + '//' + 'EU_' + country_abr + '//' + current_country_bound_filename,
+        #         crs='EPSG: 4326')
+        #     current_country_bound['NAME_1'] = current_country_bound['COUNTRY']
+        #     current_country_bound['NAME_2'] = current_country_bound['COUNTRY']
+        #     current_country_bound = current_country_bound.reindex(
+        #         columns=['GID_0', 'COUNTRY', 'NAME_1', 'NAME_2', 'geometry'])
+
+        '''current country road-density'''
+        # tem_query_cname = network_tool.identify_country(kw=country_name,
+        #                                                 l=country_area_all['country'].tolist())
+        # current_country_area = country_area_all.query("country == @tem_query_cname").iloc[0, 1]
+        # current_country_road_density: float = road_shp['length'].sum() / current_country_area
+        current_country_road_density: float = road_shp['length'].sum() / current_country_bound['area'].sum()
+
+        print("Start spatial join city bounds and roads")
+        # Spatial join the city-level bound with the road
+        city_bound2road = gpd.sjoin(left_df=current_country_bound,
+                                    right_df=road_shp,
+                                    how='left',
+                                    predicate='contains')
+        tem_city_road_length = city_bound2road.groupby(['GID_2'])['length'].sum().reset_index()
+        tem_city_road_density = eu_city_boundary.merge(tem_city_road_length,
+                                                    left_on=['GID_2'],
+                                                    right_on=['GID_2'],
+                                                    how='right')
+        tem_city_road_density['city_dens'] = tem_city_road_density['length'] / tem_city_road_density['area']
+        tem_city_road_density['city_dens'].fillna(tem_city_road_density['length'] / current_country_road_density,
+                                                  inplace=True)
+
+        print("Start merge result")
+        ''' City-level density ratio '''
+        tem_cs_idx = cs_road_density.index.tolist()
+        tem_cs = buffer.query(" @tem_cs_idx in location_u")
+        tem_cs = tem_cs.merge(cs_road_density.reset_index()[['location_u', 'density']],
+                              on='location_u',
+                              how='left')
+        tem_cs = tem_cs.merge(tem_city_road_density[['GID_2', 'city_dens']],
+                              on=['GID_2'],
+                              how='left')
+
+        tem_cs['city_den_r'] = tem_cs['density'] / tem_cs['city_dens']
+        tem_cs.dropna(subset=['city_den_r'], inplace=True)
+
+        results_cs.update({radius: pd.concat([results_cs.get(radius), tem_cs]
+                                             )
+                           })
+
+""" Finish all countries;
+    Calculate the region road density, and the region-road-density-ratio
+    for all buffers
+    """
+
+eu_area = country_area_all.query("country not in ['china','usa']")['area'].sum()
+region_density: float = eu_road_length / eu_area  # km/km^2
+
+# Calculate the ratio and output
+for radius, result_cs in results_cs.items():
+    result_cs['region_density'] = region_density
+    result_cs['density_r'] = result_cs['density'] / result_cs['region_density']
+    os.makedirs(OUTPUT_DIR + 'europe//', exist_ok=True)
+    result_cs.to_csv(OUTPUT_DIR + 'europe//' + str(radius) + '_roads.csv.gz')
 

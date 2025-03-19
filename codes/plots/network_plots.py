@@ -17,43 +17,43 @@ def load_dataset(region: str,
                  ):
     dataset = {}
     if result_dir is None:
-        result_dir = r"../data/output/texts/network//"
+        result_dir = r"data/output/texts/network//"
     if region.lower() == "china":
         for radius in radius_list:
-            result = pd.read_csv(result_dir + 'cn/' + str(radius) + '_roads.csv')
+            result = pd.read_csv(result_dir + 'china/' + str(radius) + '_roads.csv.gz')
             result = result.rename(columns={'Unnamed: 0': 'station_id'})
-            ''' Filter cities with more than 10 stations '''
-            cn_cs_counts_city = result.groupby('cityname').count().iloc[:, :1]
-            cn_filter_city_list = cn_cs_counts_city.query("station_id<=10").index.tolist()
-            ''' Clean '''
-            result = result.query("cityname not in @cn_filter_city_list")
+            # ''' Filter cities with more than 10 stations '''
+            # cn_cs_counts_city = result.groupby('city').count().iloc[:, :1]
+            # cn_filter_city_list = cn_cs_counts_city.query("station_id<=10").index.tolist()
+            # ''' Clean '''
+            # result = result.query("city not in @cn_filter_city_list")
             dataset[radius] = result
     elif region.lower() == "usa":
         for radius in radius_list:
-            result = pd.read_csv(result_dir + 'us/' + str(radius) + '_roads.csv')
+            result = pd.read_csv(result_dir + 'usa/' + str(radius) + '_roads.csv.gz')
             result = result.rename(columns={'Unnamed: 0': 'station_id'})
-            ''' Filter cities with more than 10 stations '''
-            us_cs_counts_city = result.groupby('NAME_2').count().iloc[:, :1]
-            us_filter_city_list = us_cs_counts_city.query("station_id<=10").index.tolist()
-            ''' Clean '''
-            result = result.query("NAME_2 not in @us_filter_city_list")
+            # ''' Filter cities with more than 10 stations '''
+            # us_cs_counts_city = result.groupby('HASC_2').count().iloc[:, :1]
+            # us_filter_city_list = us_cs_counts_city.query("station_id<=10").index.tolist()
+            # ''' Clean '''
+            # result = result.query("HASC_2 not in @us_filter_city_list")
             dataset[radius] = result
 
     elif region.lower() in ["europe", 'eu']:
-        eu_country_names = pd.read_excel(r'..data/interim/support/eu_sample_ratio.xlsx',
+        eu_country_names = pd.read_excel(r'data/interim/support/eu_sample_ratio.xlsx',
                                          sheet_name='Sheet2')
         eu_country_names = eu_country_names['country_shp_name'].tolist()
 
         for radius in radius_list:
-            result = pd.read_csv(result_dir + 'eu/' + str(radius) + '_roads.csv')
+            result = pd.read_csv(result_dir + 'europe/' + str(radius) + '_roads.csv.gz')
             result = result.rename(columns={'Unnamed: 0': 'station_id'})
-            '''Filter countries'''
-            result = result.query("COUNTRY in @eu_country_names")
-            ''' Filter cities with more than 10 stations '''
-            eu_cs_counts_city = result.groupby('NAME_2').count().iloc[:, :1]
-            eu_filter_city_list = eu_cs_counts_city.query("station_id<=10").index.tolist()
-            ''' Clean '''
-            result = result.query("NAME_2 not in @eu_filter_city_list")
+            # '''Filter countries'''
+            # result = result.query("COUNTRY in @eu_country_names")
+            # ''' Filter cities with more than 10 stations '''
+            # eu_cs_counts_city = result.groupby('GID_2').count().iloc[:, :1]
+            # eu_filter_city_list = eu_cs_counts_city.query("station_id<=10").index.tolist()
+            # ''' Clean '''
+            # result = result.query("GID_2 not in @eu_filter_city_list")
             dataset[radius] = result
     else:
         raise ValueError("Region is not available now.")
@@ -64,7 +64,7 @@ def load_dataset(region: str,
 def plot_network_comparison(cn_data: dict,
                             us_data: dict,
                             eu_data: dict,
-                            output_dir: str
+                            output_dir: str = None
                             ):
     ''' Derive the target values as the data for plotting '''
 
@@ -81,7 +81,6 @@ def plot_network_comparison(cn_data: dict,
 
     data = [x['density'] for x in list(region_results.values())]
 
-    plt.style.use('seaborn-whitegrid')
     plt.figure(figsize=(9, 6), dpi=230)
 
     ''' axes configuration '''
@@ -158,7 +157,7 @@ def plot_network_comparison(cn_data: dict,
 def plot_network_ratio_comparison(cn_data: dict,
                                   us_data: dict,
                                   eu_data: dict,
-                                  output_dir: str):
+                                  output_dir: str = None):
     """ Density ratio"""
 
     ''' Derive the target values as the data for plotting'''
@@ -174,9 +173,8 @@ def plot_network_ratio_comparison(cn_data: dict,
                       'eu-1000': eu_data.get(1000),
                       }
 
-    data = [x['density_r'] for x in list(region_results.values())]
+    data = [x['city_den_r'] for x in list(region_results.values())]
 
-    plt.style.use('seaborn-whitegrid')
     plt.figure(figsize=(9, 6), dpi=230)
 
     ''' axes configuration '''
@@ -270,7 +268,7 @@ def plot_cluster(region: str,
                  cluster_composition: list,
                  cluster_name: str,
                  print_stats: bool,
-                 output_dir: str
+                 output_dir: str = None,
                  ):
     cluster_results = {radius: r.query("@county_field in @cluster_composition") for radius, r in region_results}
     if print_stats:
@@ -295,7 +293,6 @@ def plot_cluster(region: str,
 
     data = [x['density_r'] for x in list(cluster_results.values())]
 
-    plt.style.use('seaborn-whitegrid')
     plt.figure(figsize=(9, 6), dpi=230)
 
     ''' axes configuration '''
