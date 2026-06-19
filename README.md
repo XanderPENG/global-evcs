@@ -1,4 +1,5 @@
-# Overview
+[![DOI](https://zenodo.org/badge/833219516.svg)](https://doi.org/10.5281/zenodo.20759810)
+# Overview 
 This repository contains all codes and (sample) dataset of the paper - 
 ***A Spatial Planning Perspective on the Global Deployment of Public Electric Vehicle Charging Stations***. 
 
@@ -86,4 +87,3 @@ or visit our research group website: [The TIP](https://thetipteam.editorx.io/web
 
 # License
 This repository is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
