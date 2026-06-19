@@ -1,6 +1,6 @@
 # Overview
 This repository contains all codes and (sample) dataset of the paper - 
-***Where Are Public Electric Vehicle Charging Stations Located Globally? Insights from a Spatial Planning Perspective***. 
+***A Spatial Planning Perspective on the Global Deployment of Public Electric Vehicle Charging Stations***. 
 
 Note that the **full dataset** can be requested through our [Global EV Data Initiative](https://globalevdata.github.io/data.html).
 
